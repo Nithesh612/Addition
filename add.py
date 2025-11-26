@@ -1,6 +1,5 @@
 import logging
 import sys
-import csv
 from typing import List, Union, Tuple, Iterator
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from dataclasses import dataclass
@@ -128,44 +127,7 @@ class ListSource(InputSource):
 
 
 class FileSource(InputSource):
-    """Input source from CSV file."""
-    
-    def __init__(self, filepath: str, column_index: int = 0, skip_header: bool = True):
-        self.filepath = Path(filepath)
-        self.column_index = column_index
-        self.skip_header = skip_header
-    
-    def validate_source(self) -> Tuple[bool, str]:
-        if not self.filepath.exists():
-            return False, f"File not found: {self.filepath}"
-        if not self.filepath.suffix.lower() in ['.csv', '.txt']:
-            return False, "Only CSV and TXT files supported"
-        if not self.filepath.stat().st_size > 0:
-            return False, "File is empty"
-        return True, "Valid"
-    
-    def read(self) -> Iterator[str]:
-        try:
-            with open(self.filepath, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                
-                if self.skip_header:
-                    next(reader, None)
-                
-                for row_idx, row in enumerate(reader):
-                    try:
-                        if self.column_index < len(row):
-                            value = row[self.column_index].strip()
-                            if value:
-                                yield value
-                        else:
-                            logger.warning(f"Row {row_idx}: Column index {self.column_index} out of range")
-                    except Exception as e:
-                        logger.warning(f"Error reading row {row_idx}: {e}")
-                        
-        except IOError as e:
-            logger.error(f"File read error: {e}")
-            raise
+ 
 
 
 class AdditionService:
@@ -321,10 +283,9 @@ def interactive_mode():
             print("\n=== Addition Service (Multi-Source) ===")
             print("1. Add two numbers")
             print("2. Add from list")
-            print("3. Add from CSV file")
-            print("4. Exit")
+            print("3. Exit")
             
-            choice = input("Enter choice (1-4): ").strip()
+            choice = input("Enter choice (1-3): ").strip()
             
             if choice == "1":
                 add_two_numbers()
@@ -333,16 +294,9 @@ def interactive_mode():
                 user_input = input("Enter numbers (comma-separated): ").strip()
                 numbers = [x.strip() for x in user_input.split(',')]
                 result = service.add_numbers(numbers)
-                print_result(result)
+                print_result(result)            
                 
             elif choice == "3":
-                filepath = input("Enter CSV file path: ").strip()
-                col = input("Enter column index (default 0): ").strip()
-                col_idx = int(col) if col else 0
-                result = service.add_from_csv(filepath, col_idx)
-                print_result(result)
-                
-            elif choice == "4":
                 print("Exiting...")
                 break
             else:
